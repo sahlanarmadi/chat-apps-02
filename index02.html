@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .chat-container {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            width: 300px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #userNameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #userNameInput,
+        #joinButton {
+            margin: 10px 0;
+        }
+
+        .messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .message {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #e0e0e0;
+            text-align: left;
+        }
+
+        .message.user {
+            background-color: #d1e7dd;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input {
+            flex-grow: 1;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-left: 5px;
+            /* tambahkan ini agar tombol terpisah dengan input */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <div id="userNameContainer">
+            <input type="text" id="userNameInput" placeholder="Enter your name...">
+            <button id="joinButton">Join</button>
+        </div>
+        <div class="messages" id="messages" style="display: none;"></div>
+        <input type="text" id="messageInput" placeholder="Type a message..." style="display: none;">
+        <button id="sendButton" style="display: none;">Send</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // const socket = io();
+        //     const messages = document.getElementById('messages');
+        //     const messageInput = document.getElementById('messageInput');
+        //     const sendButton = document.getElementById('sendButton');
+        //     const userNameInput = document.getElementById('userNameInput');
+        //     const joinButton = document.getElementById('joinButton');
+        //     const userNameContainer = document.getElementById('userNameContainer');
+
+        //     // Fungsi untuk menambahkan pesan baru ke chat
+        //     const addMessage = (data) => {
+        //         const messageElement = document.createElement('div');
+        //         messageElement.classList.add('message');
+        //         if (data.user) {
+        //             messageElement.classList.add('user'); // tambahkan class user untuk styling
+        //         }
+        //         messageElement.textContent = `${data.user}: ${data.text}`;
+        //         messages.appendChild(messageElement);
+        //         messages.scrollTop = messages.scrollHeight;
+        //     };
+
+        //     joinButton.addEventListener('click', () => {
+        //         const userName = userNameInput.value.trim();
+        //         if (userName) {
+        //             socket.emit('join', { user: userName });
+        //             userNameContainer.style.display = 'none';
+        //             messages.style.display = 'block';
+        //             messageInput.style.display = 'block';
+        //             sendButton.style.display = 'block';
+        //         }
+        //     });
+
+        //     sendButton.addEventListener('click', () => {
+        //         const message = messageInput.value;
+        //         if (message.trim()) {
+        //             const userName = userNameInput.value.trim();
+        //             socket.emit('message', { user: userName, text: message });
+        //             messageInput.value = '';
+        //         }
+        //     });
+
+        //     socket.on('message', (data) => {
+        //         addMessage(data);
+        //     });
+
+        //     socket.on('userCount', (count) => {
+        //         console.log(`Users connected: ${count}`);
+        //     });
+
+
+
+
+
+        const socket = io();
+        const messages = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const userNameInput = document.getElementById('userNameInput');
+        const joinButton = document.getElementById('joinButton');
+        const userNameContainer = document.getElementById('userNameContainer');
+        const userCountDisplay = document.createElement('div');
+
+        document.body.insertBefore(userCountDisplay, document.body.firstChild);
+
+        // Fungsi untuk menambahkan pesan baru ke chat
+        const addMessage = (data) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            if (data.user) {
+                messageElement.classList.add('user'); // tambahkan class user untuk styling
+            }
+            messageElement.textContent = `${data.user}: ${data.text}`;
+            messages.appendChild(messageElement);
+            messages.scrollTop = messages.scrollHeight;
+        };
+
+        joinButton.addEventListener('click', () => {
+            user()
+
+            const userName = userNameInput.value.trim();
+
+            if (userName) {
+                socket.emit('join', { user: userName });
+                userNameContainer.style.display = 'none';
+                messages.style.display = 'block';
+                messageInput.style.display = 'block';
+                sendButton.style.display = 'block';
+            }
+
+        });
+
+        function user() {
+            socket.on('userCount', (count) => {
+                userCountDisplay.textContent = `Users connected: ${count}`;
+                console.log(userCount);
+            });
+        }
+
+
+        sendButton.addEventListener('click', () => {
+            const message = messageInput.value;
+            if (message.trim()) {
+                const userName = userNameInput.value.trim();
+                socket.emit('message', { user: userName, text: message });
+                messageInput.value = '';
+            }
+        });
+
+        socket.on('message', (data) => {
+            addMessage(data);
+        });
+
+        socket.on('messageHistory', (history) => {
+            history.forEach(addMessage); // Menampilkan riwayat pesan
+        });
+
+
+    </script>
+</body>
+
+</html>
